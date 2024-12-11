@@ -8,4 +8,4 @@ if (Test-Path -Path "/usr") {
 
 Write-Host 'Running "auth_init.py"'
 $appId = $env:AUTH_APP_ID ?? "no-id"
-Start-Process -FilePath $venvPythonPath -ArgumentList "./scripts/auth_init.py --appid $appId" -Wait -NoNewWindow
+Start-Process -FilePath $venvPythonPath -ArgumentList "auth_init.py --appid $appId" -Wait -NoNewWindow
