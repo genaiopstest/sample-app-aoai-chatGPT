@@ -756,7 +756,11 @@ def get_payload_and_headers_cohere(
     
 def get_embedding(text, embedding_model_endpoint=None, embedding_model_key=None, azure_credential=None):
     endpoint = embedding_model_endpoint if embedding_model_endpoint else os.environ.get("EMBEDDING_MODEL_ENDPOINT")
-    
+    if not endpoint:
+        aoai_endpoint = os.environ.get("AZURE_OPENAI_ENDPOINT")
+        embeddings_name = os.environ.get("AZURE_OPENAI_EMBEDDING_NAME")
+        endpoint = f"{aoai_endpoint}openai/deployments/{embeddings_name}/embeddings?api-version=2023-03-15-preview" 
+
     FLAG_EMBEDDING_MODEL = os.getenv("FLAG_EMBEDDING_MODEL", "AOAI")
     FLAG_COHERE = os.getenv("FLAG_COHERE", "ENGLISH")
     FLAG_AOAI = os.getenv("FLAG_AOAI", "V3")
