@@ -922,8 +922,8 @@ def chunk_content(
                         title=doc.title,
                         url=url,
                         contentVector=doc.contentVector,
-                        metadata=doc.metadata
-                        # image_mapping=doc.image_mapping
+                        metadata=doc.metadata,
+                        image_mapping=doc.image_mapping
                     )
                 )
             else:

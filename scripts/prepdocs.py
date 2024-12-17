@@ -42,6 +42,7 @@ def create_search_index(index_name, index_client):
                 SearchableField(name="filepath", type="Edm.String"),
                 SearchableField(name="url", type="Edm.String"),
                 SearchableField(name="metadata", type="Edm.String"),
+                SearchField(name="image_mapping", type="Edm.String", hidden=False, searchable=False, filterable=False, sortable=False, facetable=False),
                 SearchField(name="contentVector", type=SearchFieldDataType.Collection(SearchFieldDataType.Single),
                             hidden=False, searchable=True, filterable=False, sortable=False, facetable=False,
                             vector_search_dimensions=1536, vector_search_configuration="default"),
