@@ -595,122 +595,128 @@ def extract_pdf_content(file_path, form_recognizer_client, use_layout=False):
     page_map = []
     model = "prebuilt-layout" if use_layout else "prebuilt-read"
     
-    base64file = base64.b64encode(open(file_path, "rb").read()).decode()
-    poller = form_recognizer_client.begin_analyze_document(model, AnalyzeDocumentRequest(bytes_source=base64file))
-    form_recognizer_results = poller.result()
+    # base64file = base64.b64encode(open(file_path, "rb").read()).decode()
+    # poller = form_recognizer_client.begin_analyze_document(model, AnalyzeDocumentRequest(bytes_source=base64file))
 
-    # (if using layout) mark all the positions of headers
-    roles_start = {}
-    roles_end = {}
-    for paragraph in form_recognizer_results.paragraphs:
-        if paragraph.role!=None:
-            para_start = paragraph.spans[0].offset
-            para_end = paragraph.spans[0].offset + paragraph.spans[0].length
-            roles_start[para_start] = paragraph.role
-            roles_end[para_end] = paragraph.role
+    with open(file_path, "rb") as f:
+        poller = form_recognizer_client.begin_analyze_document(model, f)
 
-    for page_num, page in enumerate(form_recognizer_results.pages):
-        page_offset = page.spans[0].offset
-        page_length = page.spans[0].length
+        form_recognizer_results = poller.result()
 
-        if use_layout:
-            tables_on_page = []
-            for table in form_recognizer_results.tables:
-                # If the table is empty, the span is empty, so we skip it
-                if len(table.spans) > 0:
-                    table_offset = table.spans[0].offset
-                    table_length = table.spans[0].length
-                    if page_offset <= table_offset and table_offset + table_length < page_offset + page_length:
-                        tables_on_page.append(table)
-        else:
-            tables_on_page = []
+        # (if using layout) mark all the positions of headers
+        roles_start = {}
+        roles_end = {}
+        for paragraph in form_recognizer_results.paragraphs:
+            if paragraph.role!=None:
+                para_start = paragraph.spans[0].offset
+                para_end = paragraph.spans[0].offset + paragraph.spans[0].length
+                roles_start[para_start] = paragraph.role
+                roles_end[para_end] = paragraph.role
 
-        # (if using layout) mark all positions of the table spans in the page
-        table_chars = [-1]*page_length
-        for table_id, table in enumerate(tables_on_page):
-            for span in table.spans:
-                # replace all table spans with "table_id" in table_chars array
-                for i in range(span.length):
-                    idx = span.offset - page_offset + i
-                    if idx >=0 and idx < page_length:
-                        table_chars[idx] = table_id
+        for page_num, page in enumerate(form_recognizer_results.pages):
+            page_offset = page.spans[0].offset
+            page_length = page.spans[0].length
 
-        # build page text by replacing charcters in table spans with table html and replace the characters corresponding to headers with html headers, if using layout
-        page_text = ""
-        added_tables = set()
-        for idx, table_id in enumerate(table_chars):
-            if table_id == -1:
-                position = page_offset + idx
-                if position in roles_start.keys():
-                    role = roles_start[position]
-                    if role in PDF_HEADERS:
-                        page_text += f"<{PDF_HEADERS[role]}>"
-                if position in roles_end.keys():
-                    role = roles_end[position]
-                    if role in PDF_HEADERS:
-                        page_text += f"</{PDF_HEADERS[role]}>"
-
-                page_text += form_recognizer_results.content[page_offset + idx]
-                
-            elif not table_id in added_tables:
-                page_text += table_to_html(tables_on_page[table_id])
-                added_tables.add(table_id)
-
-        page_text += " "
-        page_map.append((page_num, offset, page_text))
-        offset += len(page_text)
-
-    full_text = "".join([page_text for _, _, page_text in page_map])
-
-    # Extract any images
-    image_mapping = {}
-
-    if "figures" in form_recognizer_results.keys() and file_path.endswith(".pdf"):
-        document = fitz.open(file_path)
-
-        for figure in form_recognizer_results["figures"]:
-            bounding_box = figure.bounding_regions[0]
-
-            page_number = bounding_box['pageNumber'] - 1  # Page numbers in PyMuPDF start from 0
-            x0, y0, x1, y1 = polygon_to_bbox(bounding_box['polygon'])
-
-            page = document.load_page(page_number)
-            bbox = fitz.Rect(x0, y0, x1, y1)
-
-            # If either the width or height of the bounding box is less than 3 inches, we upscale by 2x
-            if bbox.width < 72*3 or bbox.height < 72*3:
-                zoom = 2.0
+            if use_layout:
+                tables_on_page = []
+                for table in form_recognizer_results.tables:
+                    # If the table is empty, the span is empty, so we skip it
+                    if len(table.spans) > 0:
+                        table_offset = table.spans[0].offset
+                        table_length = table.spans[0].length
+                        if page_offset <= table_offset and table_offset + table_length < page_offset + page_length:
+                            tables_on_page.append(table)
             else:
-                zoom = 1.0 
-            mat = fitz.Matrix(zoom, zoom)
-            image = page.get_pixmap(matrix=mat, clip=bbox)
+                tables_on_page = []
 
-            # Save the extracted image to a base64 string
-            image_data = image.tobytes(output='jpg')
-            image_base64 = base64.b64encode(image_data).decode("utf-8")
-            image_base64 = f"data:image/jpg;base64,{image_base64}"
+            # (if using layout) mark all positions of the table spans in the page
+            table_chars = [-1]*page_length
+            for table_id, table in enumerate(tables_on_page):
+                for span in table.spans:
+                    # replace all table spans with "table_id" in table_chars array
+                    for i in range(span.length):
+                        idx = span.offset - page_offset + i
+                        if idx >=0 and idx < page_length:
+                            table_chars[idx] = table_id
 
-            # Identify the text that corresponds to the figure
-            replace_start = figure["spans"][0]["offset"]
-            replace_end = figure["spans"][0]["offset"] + figure["spans"][0]["length"]
+            # build page text by replacing charcters in table spans with table html and replace the characters corresponding to headers with html headers, if using layout
+            page_text = ""
+            added_tables = set()
+            for idx, table_id in enumerate(table_chars):
+                if table_id == -1:
+                    position = page_offset + idx
+                    if position in roles_start.keys():
+                        role = roles_start[position]
+                        if role in PDF_HEADERS:
+                            page_text += f"<{PDF_HEADERS[role]}>"
+                    if position in roles_end.keys():
+                        role = roles_end[position]
+                        if role in PDF_HEADERS:
+                            page_text += f"</{PDF_HEADERS[role]}>"
 
-            # Sometimes the figure doesn't correspond to any text, in which case we skip it
-            if replace_start == replace_end:
-                continue
-            
-            # Now we get the image tag
-            original_text = form_recognizer_results.content[replace_start:replace_end]
+                    page_text += form_recognizer_results.content[page_offset + idx]
+                    
+                elif not table_id in added_tables:
+                    page_text += table_to_html(tables_on_page[table_id])
+                    added_tables.add(table_id)
 
-            if original_text not in full_text:
-                continue
-            
-            img_tag = image_content_to_tag(original_text)
-            
-            # We replace only the first occurrence of the original text
-            full_text = full_text.replace(original_text, img_tag, 1)
-            image_mapping[img_tag] = image_base64
+            page_text += " "
+            page_map.append((page_num, offset, page_text))
+            offset += len(page_text)
 
-    return full_text, image_mapping
+        full_text = "".join([page_text for _, _, page_text in page_map])
+
+        # Extract any images
+        image_mapping = {}
+
+    if hasattr(form_recognizer_results, "figures") and file_path.endswith(".pdf"):
+        if form_recognizer_results.figures:  # Ensure that figures are present
+            document = fitz.open(file_path)
+
+            for figure in form_recognizer_results.figures:
+                bounding_box = figure.bounding_regions[0]
+
+                page_number = bounding_box.page_number - 1  # Page numbers in PyMuPDF start from 0
+                x0, y0, x1, y1 = polygon_to_bbox(bounding_box.polygon)
+
+                page = document.load_page(page_number)
+                bbox = fitz.Rect(x0, y0, x1, y1)
+
+                # If either the width or height of the bounding box is less than 3 inches, we upscale by 2x
+                if bbox.width < 72 * 3 or bbox.height < 72 * 3:
+                    zoom = 2.0
+                else:
+                    zoom = 1.0 
+                mat = fitz.Matrix(zoom, zoom)
+                image = page.get_pixmap(matrix=mat, clip=bbox)
+
+                # Save the extracted image to a base64 string
+                image_data = image.tobytes(output='jpg')
+                image_base64 = base64.b64encode(image_data).decode("utf-8")
+                image_base64 = f"data:image/jpg;base64,{image_base64}"
+
+                # Identify the text that corresponds to the figure
+                replace_start = figure.spans[0].offset
+                replace_end = figure.spans[0].offset + figure.spans[0].length
+
+                # Sometimes the figure doesn't correspond to any text, in which case we skip it
+                if replace_start == replace_end:
+                    continue
+                
+                # Now we get the image tag
+                original_text = form_recognizer_results.content[replace_start:replace_end]
+
+                if original_text not in full_text:
+                    continue
+                
+                img_tag = image_content_to_tag(original_text)
+                
+                # We replace only the first occurrence of the original text
+                full_text = full_text.replace(original_text, img_tag, 1)
+                image_mapping[img_tag] = image_base64
+
+
+        return full_text, image_mapping
 
 def merge_chunks_serially(chunked_content_list: List[str], num_tokens: int, content_dict: Dict[str, str]={}) -> Generator[Tuple[str, int], None, None]:
     def unmask_urls_and_imgs(text, content_dict={}):
