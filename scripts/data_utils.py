@@ -599,6 +599,9 @@ def extract_pdf_content(file_path, form_recognizer_client, use_layout=False):
     # poller = form_recognizer_client.begin_analyze_document(model, AnalyzeDocumentRequest(bytes_source=base64file))
 
     with open(file_path, "rb") as f:
+
+        full_text = ""
+
         poller = form_recognizer_client.begin_analyze_document(model, f)
 
         form_recognizer_results = poller.result()
@@ -669,51 +672,51 @@ def extract_pdf_content(file_path, form_recognizer_client, use_layout=False):
         # Extract any images
         image_mapping = {}
 
-    if hasattr(form_recognizer_results, "figures") and file_path.endswith(".pdf"):
-        if form_recognizer_results.figures:  # Ensure that figures are present
-            document = fitz.open(file_path)
+        if hasattr(form_recognizer_results, "figures") and file_path.endswith(".pdf"):
+            if form_recognizer_results.figures:  # Ensure that figures are present
+                document = fitz.open(file_path)
 
-            for figure in form_recognizer_results.figures:
-                bounding_box = figure.bounding_regions[0]
+                for figure in form_recognizer_results.figures:
+                    bounding_box = figure.bounding_regions[0]
 
-                page_number = bounding_box.page_number - 1  # Page numbers in PyMuPDF start from 0
-                x0, y0, x1, y1 = polygon_to_bbox(bounding_box.polygon)
+                    page_number = bounding_box.page_number - 1  # Page numbers in PyMuPDF start from 0
+                    x0, y0, x1, y1 = polygon_to_bbox(bounding_box.polygon)
 
-                page = document.load_page(page_number)
-                bbox = fitz.Rect(x0, y0, x1, y1)
+                    page = document.load_page(page_number)
+                    bbox = fitz.Rect(x0, y0, x1, y1)
 
-                # If either the width or height of the bounding box is less than 3 inches, we upscale by 2x
-                if bbox.width < 72 * 3 or bbox.height < 72 * 3:
-                    zoom = 2.0
-                else:
-                    zoom = 1.0 
-                mat = fitz.Matrix(zoom, zoom)
-                image = page.get_pixmap(matrix=mat, clip=bbox)
+                    # If either the width or height of the bounding box is less than 3 inches, we upscale by 2x
+                    if bbox.width < 72 * 3 or bbox.height < 72 * 3:
+                        zoom = 2.0
+                    else:
+                        zoom = 1.0 
+                    mat = fitz.Matrix(zoom, zoom)
+                    image = page.get_pixmap(matrix=mat, clip=bbox)
 
-                # Save the extracted image to a base64 string
-                image_data = image.tobytes(output='jpg')
-                image_base64 = base64.b64encode(image_data).decode("utf-8")
-                image_base64 = f"data:image/jpg;base64,{image_base64}"
+                    # Save the extracted image to a base64 string
+                    image_data = image.tobytes(output='jpg')
+                    image_base64 = base64.b64encode(image_data).decode("utf-8")
+                    image_base64 = f"data:image/jpg;base64,{image_base64}"
 
-                # Identify the text that corresponds to the figure
-                replace_start = figure.spans[0].offset
-                replace_end = figure.spans[0].offset + figure.spans[0].length
+                    # Identify the text that corresponds to the figure
+                    replace_start = figure.spans[0].offset
+                    replace_end = figure.spans[0].offset + figure.spans[0].length
 
-                # Sometimes the figure doesn't correspond to any text, in which case we skip it
-                if replace_start == replace_end:
-                    continue
-                
-                # Now we get the image tag
-                original_text = form_recognizer_results.content[replace_start:replace_end]
+                    # Sometimes the figure doesn't correspond to any text, in which case we skip it
+                    if replace_start == replace_end:
+                        continue
+                    
+                    # Now we get the image tag
+                    original_text = form_recognizer_results.content[replace_start:replace_end]
 
-                if original_text not in full_text:
-                    continue
-                
-                img_tag = image_content_to_tag(original_text)
-                
-                # We replace only the first occurrence of the original text
-                full_text = full_text.replace(original_text, img_tag, 1)
-                image_mapping[img_tag] = image_base64
+                    if original_text not in full_text:
+                        continue
+                    
+                    img_tag = image_content_to_tag(original_text)
+                    
+                    # We replace only the first occurrence of the original text
+                    full_text = full_text.replace(original_text, img_tag, 1)
+                    image_mapping[img_tag] = image_base64
 
 
         return full_text, image_mapping
