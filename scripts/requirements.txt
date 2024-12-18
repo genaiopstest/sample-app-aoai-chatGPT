@@ -10,5 +10,5 @@ uvicorn==0.24.0
 aiohttp==3.9.2
 gunicorn==20.1.0
 pydantic-settings==2.2.1
-azure-ai-formrecognizer
+azure-ai-formrecognizer==3.3.3
 
