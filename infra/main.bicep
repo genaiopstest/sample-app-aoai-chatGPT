@@ -112,6 +112,7 @@ module backend 'core/host/appservice.bicep' = {
     authClientSecret: authClientSecret
     authClientId: authClientId
     authIssuerUri: authIssuerUri
+    appCommandLine: 'uvicorn app:app --host 0.0.0.0 --port 8000'
     appSettings: {
       // search
       AZURE_SEARCH_INDEX: searchIndexName
@@ -136,7 +137,6 @@ module backend 'core/host/appservice.bicep' = {
       AZURE_OPENAI_STOP_SEQUENCE: openAIStopSequence
       AZURE_OPENAI_SYSTEM_MESSAGE: openAISystemMessage
       AZURE_OPENAI_STREAM: openAIStream
-      WEBSITES_STARTUP_COMMAND: 'uvicorn app:app --host 0.0.0.0 --port 8000' 
     }
   }
 }
