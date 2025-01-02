@@ -618,52 +618,25 @@ def extract_pdf_content(file_path, form_recognizer_client, use_layout=False):
             roles_start[para_start] = paragraph.role
             roles_end[para_end] = paragraph.role
 
-    for page_num, page in enumerate(form_recognizer_results.pages):
-        page_offset = page.spans[0].offset
-        page_length = page.spans[0].length
+        full_text = ""
 
-        if use_layout:
-            tables_on_page = []
-            for table in form_recognizer_results.tables:
-                # If the table is empty, the span is empty, so we skip it
-                if len(table.spans) > 0:
-                    table_offset = table.spans[0].offset
-                    table_length = table.spans[0].length
-                    if page_offset <= table_offset and table_offset + table_length < page_offset + page_length:
-                        tables_on_page.append(table)
-        else:
-            tables_on_page = []
+        poller = form_recognizer_client.begin_analyze_document(model, f)
 
-        # (if using layout) mark all positions of the table spans in the page
-        table_chars = [-1]*page_length
-        for table_id, table in enumerate(tables_on_page):
-            for span in table.spans:
-                # replace all table spans with "table_id" in table_chars array
-                for i in range(span.length):
-                    idx = span.offset - page_offset + i
-                    if idx >=0 and idx < page_length:
-                        table_chars[idx] = table_id
+        form_recognizer_results = poller.result()
 
-        # build page text by replacing charcters in table spans with table html and replace the characters corresponding to headers with html headers, if using layout
-        page_text = ""
-        added_tables = set()
-        for idx, table_id in enumerate(table_chars):
-            if table_id == -1:
-                position = page_offset + idx
-                if position in roles_start.keys():
-                    role = roles_start[position]
-                    if role in PDF_HEADERS:
-                        page_text += f"<{PDF_HEADERS[role]}>"
-                if position in roles_end.keys():
-                    role = roles_end[position]
-                    if role in PDF_HEADERS:
-                        page_text += f"</{PDF_HEADERS[role]}>"
+        # (if using layout) mark all the positions of headers
+        roles_start = {}
+        roles_end = {}
+        for paragraph in form_recognizer_results.paragraphs:
+            if paragraph.role!=None:
+                para_start = paragraph.spans[0].offset
+                para_end = paragraph.spans[0].offset + paragraph.spans[0].length
+                roles_start[para_start] = paragraph.role
+                roles_end[para_end] = paragraph.role
 
-                page_text += form_recognizer_results.content[page_offset + idx]
-                
-            elif not table_id in added_tables:
-                page_text += table_to_html(tables_on_page[table_id])
-                added_tables.add(table_id)
+        for page_num, page in enumerate(form_recognizer_results.pages):
+            page_offset = page.spans[0].offset
+            page_length = page.spans[0].length
 
         page_text += " "
         page_map.append((page_num, offset, page_text))
