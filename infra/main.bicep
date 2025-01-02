@@ -78,7 +78,6 @@ resource searchServiceResourceGroup 'Microsoft.Resources/resourceGroups@2021-04-
   name: !empty(searchServiceResourceGroupName) ? searchServiceResourceGroupName : resourceGroup.name
 }
 
-
 // Create an App Service Plan to group applications under the same payment plan and SKU
 module appServicePlan 'core/host/appserviceplan.bicep' = {
   name: 'appserviceplan'
@@ -320,6 +319,7 @@ output AZURE_OPENAI_MAX_TOKENS int = openAIMaxTokens
 output AZURE_OPENAI_STOP_SEQUENCE string = openAIStopSequence
 output AZURE_OPENAI_SYSTEM_MESSAGE string = openAISystemMessage
 output AZURE_OPENAI_STREAM bool = openAIStream
+output EMBEDDING_MODEL_ENDPOINT string = '${openAi.outputs.endpoint}/openai/deployments/${embeddingDeploymentName}/embeddings?api-version=2024-10-21'
 
 // Used by prepdocs.py:
 output AZURE_FORMRECOGNIZER_SERVICE string = docPrepResources.outputs.AZURE_FORMRECOGNIZER_SERVICE

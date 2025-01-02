@@ -18,6 +18,7 @@ from azure.ai.documentintelligence.models import AnalyzeDocumentRequest
 import fitz
 import requests
 import base64
+import logging
 
 import markdown
 import requests
@@ -595,9 +596,17 @@ def extract_pdf_content(file_path, form_recognizer_client, use_layout=False):
     page_map = []
     model = "prebuilt-layout" if use_layout else "prebuilt-read"
     
-    base64file = base64.b64encode(open(file_path, "rb").read()).decode()
-    poller = form_recognizer_client.begin_analyze_document(model, AnalyzeDocumentRequest(bytes_source=base64file))
+    print(f"extracting pdf content from: {file_path}.")
+
+    with open(file_path, "rb") as f:
+        pdf_bytes = f.read()
+    
+    poller = form_recognizer_client.begin_analyze_document(model, pdf_bytes)
     form_recognizer_results = poller.result()
+
+    # base64file = base64.b64encode(open(file_path, "rb").read()).decode()
+    # poller = form_recognizer_client.begin_analyze_document(model, AnalyzeDocumentRequest(bytes_source=base64file))
+    # form_recognizer_results = poller.result()
 
     # (if using layout) mark all the positions of headers
     roles_start = {}
@@ -665,50 +674,51 @@ def extract_pdf_content(file_path, form_recognizer_client, use_layout=False):
     # Extract any images
     image_mapping = {}
 
-    if "figures" in form_recognizer_results.keys() and file_path.endswith(".pdf"):
-        document = fitz.open(file_path)
+    # Disabling image mapping for now to avoid AttributeError: 'AnalyzeResult' object has no attribute 'keys'
+    # if "figures" in form_recognizer_results.keys() and file_path.endswith(".pdf"):
+    #     document = fitz.open(file_path)
 
-        for figure in form_recognizer_results["figures"]:
-            bounding_box = figure.bounding_regions[0]
+    #     for figure in form_recognizer_results["figures"]:
+    #         bounding_box = figure.bounding_regions[0]
 
-            page_number = bounding_box['pageNumber'] - 1  # Page numbers in PyMuPDF start from 0
-            x0, y0, x1, y1 = polygon_to_bbox(bounding_box['polygon'])
+    #         page_number = bounding_box['pageNumber'] - 1  # Page numbers in PyMuPDF start from 0
+    #         x0, y0, x1, y1 = polygon_to_bbox(bounding_box['polygon'])
 
-            page = document.load_page(page_number)
-            bbox = fitz.Rect(x0, y0, x1, y1)
+    #         page = document.load_page(page_number)
+    #         bbox = fitz.Rect(x0, y0, x1, y1)
 
-            # If either the width or height of the bounding box is less than 3 inches, we upscale by 2x
-            if bbox.width < 72*3 or bbox.height < 72*3:
-                zoom = 2.0
-            else:
-                zoom = 1.0 
-            mat = fitz.Matrix(zoom, zoom)
-            image = page.get_pixmap(matrix=mat, clip=bbox)
+    #         # If either the width or height of the bounding box is less than 3 inches, we upscale by 2x
+    #         if bbox.width < 72*3 or bbox.height < 72*3:
+    #             zoom = 2.0
+    #         else:
+    #             zoom = 1.0 
+    #         mat = fitz.Matrix(zoom, zoom)
+    #         image = page.get_pixmap(matrix=mat, clip=bbox)
 
-            # Save the extracted image to a base64 string
-            image_data = image.tobytes(output='jpg')
-            image_base64 = base64.b64encode(image_data).decode("utf-8")
-            image_base64 = f"data:image/jpg;base64,{image_base64}"
+    #         # Save the extracted image to a base64 string
+    #         image_data = image.tobytes(output='jpg')
+    #         image_base64 = base64.b64encode(image_data).decode("utf-8")
+    #         image_base64 = f"data:image/jpg;base64,{image_base64}"
 
-            # Identify the text that corresponds to the figure
-            replace_start = figure["spans"][0]["offset"]
-            replace_end = figure["spans"][0]["offset"] + figure["spans"][0]["length"]
+    #         # Identify the text that corresponds to the figure
+    #         replace_start = figure["spans"][0]["offset"]
+    #         replace_end = figure["spans"][0]["offset"] + figure["spans"][0]["length"]
 
-            # Sometimes the figure doesn't correspond to any text, in which case we skip it
-            if replace_start == replace_end:
-                continue
+    #         # Sometimes the figure doesn't correspond to any text, in which case we skip it
+    #         if replace_start == replace_end:
+    #             continue
             
-            # Now we get the image tag
-            original_text = form_recognizer_results.content[replace_start:replace_end]
+    #         # Now we get the image tag
+    #         original_text = form_recognizer_results.content[replace_start:replace_end]
 
-            if original_text not in full_text:
-                continue
+    #         if original_text not in full_text:
+    #             continue
             
-            img_tag = image_content_to_tag(original_text)
+    #         img_tag = image_content_to_tag(original_text)
             
-            # We replace only the first occurrence of the original text
-            full_text = full_text.replace(original_text, img_tag, 1)
-            image_mapping[img_tag] = image_base64
+    #         # We replace only the first occurrence of the original text
+    #         full_text = full_text.replace(original_text, img_tag, 1)
+    #         image_mapping[img_tag] = image_base64
 
     return full_text, image_mapping
 
@@ -748,52 +758,34 @@ def get_payload_and_headers_cohere(
 def get_embedding(text, embedding_model_endpoint=None, embedding_model_key=None, azure_credential=None):
     endpoint = embedding_model_endpoint if embedding_model_endpoint else os.environ.get("EMBEDDING_MODEL_ENDPOINT")
     
-    FLAG_EMBEDDING_MODEL = os.getenv("FLAG_EMBEDDING_MODEL", "AOAI")
-    FLAG_COHERE = os.getenv("FLAG_COHERE", "ENGLISH")
-    FLAG_AOAI = os.getenv("FLAG_AOAI", "V3")
-
-    if azure_credential is None and (endpoint is None or key is None):
-        raise Exception("EMBEDDING_MODEL_ENDPOINT and EMBEDDING_MODEL_KEY are required for embedding")
+    if endpoint is None:
+        raise Exception("EMBEDDING_MODEL_ENDPOINT are required for embedding")
+    
+    if azure_credential is None and embedding_model_key is None:
+        raise Exception("EMBEDDING_MODEL_KEY is  required for embedding")
 
     try:
-        if FLAG_EMBEDDING_MODEL == "AOAI":
-            endpoint_parts = endpoint.split("/openai/deployments/")
-            base_url = endpoint_parts[0]
-            deployment_id = endpoint_parts[1].split("/embeddings")[0]
-            api_version = endpoint_parts[1].split("api-version=")[1].split("&")[0]
-            if azure_credential is not None:
-                api_key = azure_credential.get_token("https://cognitiveservices.azure.com/.default").token
-            else:
-                api_key = embedding_model_key if embedding_model_key else os.getenv("AZURE_OPENAI_API_KEY")
-            
-            client = AzureOpenAI(api_version=api_version, azure_endpoint=base_url, api_key=api_key)
-            if FLAG_AOAI == "V2":
-                embeddings = client.embeddings.create(model=deployment_id, input=text)
-            elif FLAG_AOAI == "V3":   
-                embeddings = client.embeddings.create(model=deployment_id, 
-                                                      input=text, 
-                                                      dimensions=int(os.getenv("VECTOR_DIMENSION", 1536)))
-            
-            return embeddings.model_dump()['data'][0]['embedding']
-        
-        if FLAG_EMBEDDING_MODEL == "COHERE":
-            if FLAG_COHERE == "MULTILINGUAL":
-                key = embedding_model_key if embedding_model_key else os.getenv("COHERE_MULTILINGUAL_API_KEY")
-            elif FLAG_COHERE == "ENGLISH":
-                key = embedding_model_key if embedding_model_key else os.getenv("COHERE_ENGLISH_API_KEY")
-            data, headers = get_payload_and_headers_cohere(text, key)
+        endpoint_parts = endpoint.split("/openai/deployments/")
+        base_url = endpoint_parts[0]
+        deployment_id = endpoint_parts[1].split("/embeddings")[0]
+        api_version = endpoint_parts[1].split("api-version=")[1].split("&")[0]
 
-            body = str.encode(json.dumps(data))
-            req = urllib.request.Request(endpoint, body, headers)
-            response = urllib.request.urlopen(req)
-            result = response.read()
-            result_content = json.loads(result.decode('utf-8'))
-                        
-            return result_content["embeddings"][0]   
+        if azure_credential is not None:
+            api_key = azure_credential.get_token("https://cognitiveservices.azure.com/.default").token
+        else:
+            api_key = embedding_model_key if embedding_model_key else os.getenv("AZURE_OPENAI_API_KEY")
         
-
+        print(f"Initializing AzureOpenAI with api_version={api_version}, azure_endpoint={base_url}, api_key={api_key[:10]}")
+        client = AzureOpenAI(api_version=api_version, azure_endpoint=base_url, api_key=api_key)
+        
+        print(f"Creating embeddings with model={deployment_id}, input={text[:50].replace("\n", " ")}")
+        response = client.embeddings.create(model=deployment_id, input=text)
+        embeddings = response.data[0].embedding
+        return embeddings
+            
     except Exception as e:
         raise Exception(f"Error getting embeddings with endpoint={endpoint} with error={e}")
+
 
 
 def chunk_content_helper(
@@ -897,7 +889,7 @@ def chunk_content(
                             print(f"Error getting embedding for chunk with error={e}, retrying, current at {i + 1} retry, {RETRY_COUNT - (i + 1)} retries left")
                             time.sleep(30)
                     if doc.contentVector is None:
-                        raise Exception(f"Error getting embedding for chunk={chunk}")
+                        raise Exception(f"Error getting embedding for chunk={chunk[:100]}")
                     
                 doc.image_mapping = {}
                 for key, value in image_mapping.items():
