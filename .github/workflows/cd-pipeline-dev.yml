@@ -3,13 +3,13 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - main
+      - develop
 
 jobs:
   provision:
     name: Provision Azure Resources
     runs-on: ubuntu-latest
-    environment: prod
+    environment: dev
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -30,7 +30,7 @@ jobs:
   deploy:
     name: Deploy Application
     runs-on: ubuntu-latest
-    environment: prod
+    environment: dev
     needs: provision
     steps:
       - name: Checkout repository
