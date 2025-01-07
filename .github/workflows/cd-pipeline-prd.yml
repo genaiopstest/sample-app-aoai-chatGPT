@@ -41,7 +41,6 @@ jobs:
 
       - name: azd init
         shell: bash
-        
         run: azd init -e $AZURE_ENV_NAME  -l $AZURE_LOCATION -s $AZURE_SUBSCRIPTION_ID
 
       - name: azd provision

@@ -8,7 +8,7 @@ on:
 
 jobs:
   provision:
-    name: Provision Azure Resources and Deploy App
+    name: Provision Resources and Deploy App
     runs-on: ubuntu-latest
     environment: dev
     env:
@@ -42,7 +42,6 @@ jobs:
 
       - name: azd init
         shell: bash
-        
         run: azd init -e $AZURE_ENV_NAME  -l $AZURE_LOCATION -s $AZURE_SUBSCRIPTION_ID
 
       - name: azd provision
