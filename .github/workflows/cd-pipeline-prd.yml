@@ -3,13 +3,13 @@ name: Deploy to Production
 on:
   push:
     branches:
-      - main
+      - main2
 
 jobs:
   provision:
     name: Provision Azure Resources
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -20,7 +20,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Install Azure Dev CLI
-        uses: azure/azure-dev-cli-action@v1
+        uses: Azure/setup-azd@v1.0.0
         with:
           version: latest
 
@@ -30,7 +30,7 @@ jobs:
   deploy:
     name: Deploy Application
     runs-on: ubuntu-latest
-    environment: production
+    environment: prod
     needs: provision
     steps:
       - name: Checkout repository
@@ -42,7 +42,7 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Install Azure Dev CLI
-        uses: azure/azure-dev-cli-action@v1
+        uses: Azure/setup-azd@v1.0.0
         with:
           version: latest
 
