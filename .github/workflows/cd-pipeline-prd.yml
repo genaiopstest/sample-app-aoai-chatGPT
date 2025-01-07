@@ -14,6 +14,7 @@ jobs:
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }} 
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}  
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -27,6 +28,16 @@ jobs:
         uses: Azure/setup-azd@v1.0.0
         with:
           version: latest
+
+      - name: Login to Azure Dev CLI 
+        shell: bash
+        run: |
+          echo "Logging to Azure Developer CLI..."
+          AZURE_CREDENTIALS=$(echo '$AZURE_CREDENTIALS' | jq -r .)
+          CLIENT_ID=$(echo $AZURE_CREDENTIALS | jq -r .clientId)
+          CLIENT_SECRET=$(echo $AZURE_CREDENTIALS | jq -r .clientSecret)
+          TENANT_ID=$(echo $AZURE_CREDENTIALS | jq -r .tenantId)
+          azd auth login --client-id $CLIENT_ID --client-secret $CLIENT_SECRET --tenant-id $TENANT_ID    
 
       - name: azd init
         shell: bash
