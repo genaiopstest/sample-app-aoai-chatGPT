@@ -7,7 +7,7 @@ on:
 
 jobs:
   provision:
-    name: Provision Azure Resources
+    name: Provision Resources and Deploy App
     runs-on: ubuntu-latest
     environment: prod
     env:
