@@ -24,7 +24,12 @@ jobs:
         with:
           version: latest
 
+      - name: azd init
+        shell: bash
+        run: azd init -e ${{ env.AZURE_ENV_NAME }} -l ${{ env.AZURE_LOCATION }} -s ${{ env.AZURE_SUBSCRIPTION_ID }}
+
       - name: azd provision
+        shell: bash
         run: azd provision
 
   deploy:
@@ -47,4 +52,5 @@ jobs:
           version: latest
 
       - name: azd deploy
+        shell: bash
         run: azd deploy

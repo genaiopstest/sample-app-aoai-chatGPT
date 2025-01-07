@@ -25,10 +25,10 @@ jobs:
         pip install -r requirements-dev.txt
     - name: Test with pytest
       env:
-        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZUREOPENAIENDPOINT }}
-        AZURE_OPENAI_MODEL: ${{ secrets.AZUREOPENAIMODEL }}
-        AZURE_OPENAI_KEY: ${{ secrets.AZUREOPENAIKEY }}
-        AZURE_OPENAI_EMBEDDING_NAME: ${{ secrets.AZUREOPENAIEMBEDDINGNAME }}
+        AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+        AZURE_OPENAI_MODEL: ${{ secrets.AZURE_OPENAI_MODEL }}
+        AZURE_OPENAI_KEY: ${{ secrets.AZURE_OPENAI_KEY }}
+        AZURE_OPENAI_EMBEDDING_NAME: ${{ secrets.AZURE_OPENAI_EMBEDDING_NAME }}
       run: |
         export PYTHONPATH=$(pwd)
         coverage run -m pytest -v --show-capture=stdout
