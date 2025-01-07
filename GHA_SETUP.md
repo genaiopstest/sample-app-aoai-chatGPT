@@ -110,7 +110,7 @@ The `AZURE_CREDENTIALS` secret should contain a JSON object with your Azure serv
 
 1. **Create a Service Principal for `dev`:**
    ```bash
-   az ad sp create-for-rbac --name "sp-github-actions-dev" --role contributor --scopes /subscriptions/{subscription-id} --sdk-auth
+   az ad sp create-for-rbac --name "sp-github-actions-dev" --role owner --scopes /subscriptions/{subscription-id} --sdk-auth
    ```
    - Replace `{subscription-id}` with your Azure subscription ID for the dev environment.
 
@@ -123,7 +123,7 @@ The `AZURE_CREDENTIALS` secret should contain a JSON object with your Azure serv
 
 4. **Create a Service Principal for `prod`:**
    ```bash
-   az ad sp create-for-rbac --name "sp-github-actions-prod" --role contributor --scopes /subscriptions/{subscription-id} --sdk-auth
+   az ad sp create-for-rbac --name "sp-github-actions-prod" --role owner --scopes /subscriptions/{subscription-id} --sdk-auth
    ```
    - Replace `{subscription-id}` with your Azure subscription ID for the prod environment.
 
