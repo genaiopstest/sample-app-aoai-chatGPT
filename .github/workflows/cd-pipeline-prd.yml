@@ -15,6 +15,9 @@ jobs:
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}  
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
+      AUTH_APP_ID: ${{ secrets.AUTH_APP_ID }}
+      AUTH_CLIENT_ID: ${{ secrets.AUTH_CLIENT_ID }}
+      AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -33,7 +36,7 @@ jobs:
         shell: bash
         run: |
           echo "Logging to Azure Developer CLI..."
-          AZURE_CREDENTIALS=$(echo '$AZURE_CREDENTIALS' | jq -r .)
+          AZURE_CREDENTIALS=$(echo "$AZURE_CREDENTIALS" | jq -r .)
           CLIENT_ID=$(echo $AZURE_CREDENTIALS | jq -r .clientId)
           CLIENT_SECRET=$(echo $AZURE_CREDENTIALS | jq -r .clientSecret)
           TENANT_ID=$(echo $AZURE_CREDENTIALS | jq -r .tenantId)
@@ -41,7 +44,11 @@ jobs:
 
       - name: azd init
         shell: bash
-        run: azd init -e $AZURE_ENV_NAME  -l $AZURE_LOCATION -s $AZURE_SUBSCRIPTION_ID
+        run: |
+         azd init -e $AZURE_ENV_NAME  -l $AZURE_LOCATION -s $AZURE_SUBSCRIPTION_ID
+         azd env set AUTH_APP_ID $AUTH_APP_ID
+         azd env set AUTH_CLIENT_ID $AUTH_CLIENT_ID
+         azd env set AUTH_CLIENT_SECRET $AUTH_CLIENT_SECRET
 
       - name: azd provision
         shell: bash
