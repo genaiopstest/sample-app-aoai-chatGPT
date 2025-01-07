@@ -34,7 +34,8 @@ jobs:
         shell: bash
         run: |
           echo "Logging to Azure Developer CLI..."
-          AZURE_CREDENTIALS=$(echo '$AZURE_CREDENTIALS' | jq -r .)
+          echo "$AZURE_CREDENTIALS" | jq .
+          AZURE_CREDENTIALS=$(echo "$AZURE_CREDENTIALS" | jq -r .)
           CLIENT_ID=$(echo $AZURE_CREDENTIALS | jq -r .clientId)
           CLIENT_SECRET=$(echo $AZURE_CREDENTIALS | jq -r .clientSecret)
           TENANT_ID=$(echo $AZURE_CREDENTIALS | jq -r .tenantId)
