@@ -9,7 +9,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  provision:
+  provision-and-deploy:
     name: Provision Resources and Deploy App
     runs-on: ubuntu-latest
     environment: dev

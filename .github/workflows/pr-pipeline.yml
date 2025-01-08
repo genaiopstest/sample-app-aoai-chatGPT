@@ -31,7 +31,6 @@ jobs:
         coverage run -m pytest -v --show-capture=stdout
         coverage report -m --include=app.py,backend/*,tests/*
         coverage xml
-
     - name: Code Coverage Report
       uses: irongut/CodeCoverageSummary@v1.3.0
       with:
