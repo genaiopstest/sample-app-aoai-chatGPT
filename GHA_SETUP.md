@@ -153,17 +153,17 @@ In addition to secrets, the workflows require specific environment variables for
 
 The repository includes three key GitHub Actions workflows to manage CI/CD processes effectively. These workflows are located in the `.github/workflows` directory:
 
-1. **Deploy to Development (********`cd-pipeline-dev.yml`********\*\*\*\*)**\
+1. **Pull Request Pipeline `pr-pipeline.yml`
+   Focuses on validating code quality and application behavior for pull requests targeting the `develop` branch. It includes steps for running tests and generating reports for both backend and frontend components.
+
+2. **Deploy to Development `cd-pipeline-dev.yml`
    Automates provisioning and deployment to the `dev` environment. Triggered by changes to the `develop` branch, it ensures the development environment is updated with the latest resources and application state.
 
-2. **Deploy to QA (********`cd-pipeline-qa.yml`********\*\*\*\*)**\
+3. **Deploy to QA `cd-pipeline-qa.yml`
    Automates provisioning and deployment to the `qa` environment. Triggered by changes to the `qa` branch, it ensures the QA environment is updated for testing purposes.
 
-3. **Deploy to Production (********`cd-pipeline-prd.yml`********\*\*\*\*)**\
+4. **Deploy to Production `cd-pipeline-prd.yml`
    Handles provisioning and deployment to the `prod` environment. Triggered by changes to the `main` branch, this workflow ensures production updates are executed with the necessary configurations for stability and security.
-
-4. **Pull Request Pipeline (********`pr-pipeline.yml`********\*\*\*\*)**\
-   Focuses on validating code quality and application behavior for pull requests targeting the `develop` branch. It includes steps for running tests and generating reports for both backend and frontend components.
 
 Each workflow is designed to ensure environment-specific configurations are applied, leveraging secrets, environment variables, and pre-defined triggers for seamless automation.
 
