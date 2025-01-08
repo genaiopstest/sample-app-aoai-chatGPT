@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  provision:
+  provision-and-deploy:
     name: Provision Resources and Deploy App
     runs-on: ubuntu-latest
     environment: prod
@@ -57,3 +57,7 @@ jobs:
       - name: azd deploy
         shell: bash
         run: azd deploy
+
+      - name: run smoke tests
+        shell: bash
+        run: echo "TODO > run smoke tests"        

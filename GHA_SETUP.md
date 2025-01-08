@@ -154,9 +154,6 @@ In addition to secrets, the workflows require specific environment variables for
 | `AZURE_ENV_NAME`              | Specifies the Azure Dev environment name.            | Deployment pipelines  | `dev`, `prod` |
 | `AZURE_LOCATION`              | Specifies the Azure region for resources.            | Deployment pipelines  | `dev`, `prod` |
 | `AZURE_SUBSCRIPTION_ID`       | Specifies the Azure subscription ID.                 | Deployment pipelines  | `dev`, `prod` |
-| `AZURE_OPENAI_ENDPOINT`       | Specifies the endpoint URL for Azure OpenAI.         | Pull Request pipeline | `dev`, `prod` |
-| `AZURE_OPENAI_MODEL`          | Specifies the Azure OpenAI model name.               | Pull Request pipeline | `dev`, `prod` |
-| `AZURE_OPENAI_EMBEDDING_NAME` | Specifies the embedding model name for Azure OpenAI. | Pull Request pipeline | `dev`, `prod` |
 
 ---
 
