@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - develop
+
+  # leave this option to trigger the workflow manually
   workflow_dispatch:
 
 jobs:
