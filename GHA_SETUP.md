@@ -1,6 +1,9 @@
 # Sample AOAI App Configuration for CI/CD Pipelines
 
-This guide provides instructions to configure your Sample AOAI App GitHub repository for CI/CD workflows. It covers creating environments, setting up secrets specific to each environment, configuring necessary environment variables, creating Azure App Registrations for each environment, and ensuring all configurations are correctly in place.
+This guide provides instructions to configure your Sample AOAI App GitHub repository for CI/CD pipelines. It covers creating environments, setting up secrets specific to each environment, configuring necessary environment variables, creating Azure App Registrations for each environment, and ensuring all configurations are correctly in place. 
+
+> [!Note]
+> The Git workflow described here is based on the example provided at [Git Workflow and Pipelines](https://github.com/Azure/GenAIOps/blob/main/documentation/git_workflow.md).
 
 ## Table of Contents
 
@@ -11,7 +14,6 @@ This guide provides instructions to configure your Sample AOAI App GitHub reposi
 5. [Environment Variables Configuration](#environment-variables-configuration)
 6. [Workflow Files Overview](#workflow-files-overview)
 7. [Additional Configurations](#additional-configurations)
-8. [Conclusion](#conclusion)
 
 ---
 
@@ -21,15 +23,15 @@ Before proceeding, ensure you have the following:
 
 - **GitHub Repository Access:** Administrative access to the GitHub repository where the workflows will be configured.
 - **Azure Account:** An active Azure account with the necessary permissions to create and manage resources.
-- **Azure Dev CLI (`azd`):** Installed and configured on your local machine for provisioning Azure resources.
+- **Azure Dev CLI (********`azd`********\*\*\*\*):** Installed and configured on your local machine for provisioning Azure resources.
 - **Service Principal:** Created in Azure for authentication purposes.
-- **Azure App Registrations:** Separate App Registrations for `dev` and `prod` environments.
+- **Azure App Registrations:** Separate App Registrations for `dev`, `qa`, and `prod` environments.
 
 ---
 
 ## Environments Setup
 
-The workflows require two environments: `dev` and `prod`. Environments in GitHub Actions help manage deployments and control access to sensitive information.
+The workflows require three environments: `dev`, `qa`, and `prod`. Environments in GitHub Actions help manage deployments and control access to sensitive information.
 
 ### Creating Environments
 
@@ -46,26 +48,22 @@ The workflows require two environments: `dev` and `prod`. Environments in GitHub
    - In the left sidebar, click on `Environments`.
    - Click the `New environment` button.
 
-4. **Create `dev` Environment:**
+4. **Create ************`dev`************, ************`qa`************, and ************`prod`************ Environments:**
 
-   - **Name:** `dev`
-   - **Optional Configurations:**
-     - **Environment Protection Rules:** Configure rules such as required reviewers or wait timers if needed.
-   - Click `Configure environment` to finalize.
-
-5. **Create `prod` Environment:**
-
-   - Repeat the above steps with the **Name:** `prod`.
+   - For each environment, follow these steps:
+     - **Name:** Enter `dev`, `qa`, or `prod` as appropriate.
+     - **Optional Configurations:** Configure rules such as required reviewers or wait timers if needed.
+     - Click `Configure environment` to finalize.
 
 ---
 
 ## Azure App Registrations
 
-Each environment (`dev` and `prod`) requires its own Azure App Registration to handle authentication and authorization. This ensures environment isolation and security.
+Each environment (`dev`, `qa`, and `prod`) requires its own Azure App Registration to handle authentication and authorization. This ensures environment isolation and security.
 
 ### Creating an App Registration for Each Environment
 
-Follow these steps to create an App Registration in the Azure Portal for both `dev` and `prod` environments.
+Follow these steps to create an App Registration in the Azure Portal for all three environments.
 
 #### 1. Navigate to Azure Active Directory
 
@@ -84,24 +82,18 @@ Follow these steps to create an App Registration in the Azure Portal for both `d
 
 3. **Provide Registration Details:**
 
-   - **Name:** Enter a name for your application (e.g., `WebApp-Dev` for the dev environment and `WebApp-Prod` for the prod environment).
+   - **Name:** Enter a name for your application (e.g., `WebApp-Dev` for the dev environment, `WebApp-QA` for the qa environment, and `WebApp-Prod` for the prod environment).
    - **Supported account types:** Select the appropriate option (e.g., "Accounts in this organizational directory only").
    - **Redirect URI:**
      - **Platform:** Click on **Add a platform**.
      - **Select Platform:** Choose **Web**.
      - **Redirect URIs:** Enter the URI `http://localhost:5000/.auth/login/aad/callback`.
-   - **Implicit Grant and Hybrid Flows:**
-     - **Select:** Check the box for **ID tokens (used for implicit and hybrid flows)**.
    - Click **Register**.
 
-   ![Add Web Platform, Redirect URI, and ID Tokens](https://example.com/path-to-your-image.png) *(Replace with actual image if available)*
-
-   > **Note:** Selecting **ID tokens (used for implicit and hybrid flows)** is essential for enabling authentication flows that rely on ID tokens, such as implicit and hybrid OAuth 2.0 flows. This ensures that your application can securely handle user authentication.
-
-#### 3. Note the Application (client) ID and Directory (tenant) ID
+#### 3. Note the Application (client) ID and Object ID
 
 - After registration, you will be redirected to the application's **Overview** page.
-- **Copy** the **Application (client) ID** and **Directory (tenant) ID** for later use.
+- **Copy** the **Application (client) ID** and **Object ID** for later use.
 
 #### 4. Add a Client Secret
 
@@ -112,7 +104,7 @@ Follow these steps to create an App Registration in the Azure Portal for both `d
 2. **Create a New Client Secret:**
 
    - Under **Client secrets**, click **+ New client secret**.
-   - **Description:** Enter a description (e.g., `DefaultClientSecret-Dev` or `DefaultClientSecret-Prod`).
+   - **Description:** Enter a description (e.g., `DefaultClientSecret-Dev`, `DefaultClientSecret-QA`, or `DefaultClientSecret-Prod`).
    - **Expires:** Set an expiration period (e.g., 6 months, 12 months, or a custom period).
    - Click **Add**.
 
@@ -123,23 +115,23 @@ Follow these steps to create an App Registration in the Azure Portal for both `d
 
 #### 5. App Registration Details
 
-For each environment (`dev` and `prod`), note down the `Application (client) ID`, `Directory (tenant) ID`, and `Client Secret Value`.
+For each environment (`dev`, `qa`, and `prod`), note down the `Application (client) ID`, `Object ID`, and `Client Secret Value`.
 
 ---
 
 ## Secrets Configuration
 
-The workflows rely on secrets for authentication and configuration. These secrets should be securely stored and scoped to their respective environments (`dev` and `prod`) to ensure that each environment uses its own set of credentials.
+The workflows rely on secrets for authentication and configuration. These secrets should be securely stored and scoped to their respective environments (`dev`, `qa`, and `prod`) to ensure that each environment uses its own set of credentials.
 
 ### Secrets Table
 
-| Secret Name           | Usage                                       | Workflow(s)           | Environment   |
-| --------------------- | ------------------------------------------- | --------------------- | ------------- |
-| `AZURE_CREDENTIALS`   | Authenticates GitHub Actions with Azure.    | All pipelines         | `dev`, `prod` |
-| `AZURE_OPENAI_KEY`    | Authenticates requests to Azure OpenAI.     | Pull Request pipeline | `dev`, `prod` |
-| `AUTH_APP_ID`         | App registration's Directory (tenant) ID.   | All pipelines         | `dev`, `prod` |
-| `AUTH_CLIENT_ID`      | App registration's Application (client) ID. | All pipelines         | `dev`, `prod` |
-| `AUTH_CLIENT_SECRET`  | App registration's Client Secret.           | All pipelines         | `dev`, `prod` |
+| Secret Name          | Usage                                       | Workflow(s)           | Environment         |
+| -------------------- | ------------------------------------------- | --------------------- | ------------------- |
+| `AZURE_CREDENTIALS`  | Authenticates GitHub Actions with Azure.    | All pipelines         | `dev`, `qa`, `prod` |
+| `AZURE_OPENAI_KEY`   | Authenticates requests to Azure OpenAI.     | Pull Request pipeline | `dev`, `qa`, `prod` |
+| `AUTH_APP_ID`        | App registration's Object ID.               | All pipelines         | `dev`, `qa`, `prod` |
+| `AUTH_CLIENT_ID`     | App registration's Application (client) ID. | All pipelines         | `dev`, `qa`, `prod` |
+| `AUTH_CLIENT_SECRET` | App registration's Client Secret.           | All pipelines         | `dev`, `qa`, `prod` |
 
 ---
 
@@ -149,11 +141,11 @@ In addition to secrets, the workflows require specific environment variables for
 
 ### Environment Variables Table
 
-| Variable Name                 | Usage                                                | Workflow(s)           | Environment   |
-| ----------------------------- | ---------------------------------------------------- | --------------------- | ------------- |
-| `AZURE_ENV_NAME`              | Specifies the Azure Dev environment name.            | Deployment pipelines  | `dev`, `prod` |
-| `AZURE_LOCATION`              | Specifies the Azure region for resources.            | Deployment pipelines  | `dev`, `prod` |
-| `AZURE_SUBSCRIPTION_ID`       | Specifies the Azure subscription ID.                 | Deployment pipelines  | `dev`, `prod` |
+| Variable Name           | Usage                                     | Workflow(s)          | Environment         |
+| ----------------------- | ----------------------------------------- | -------------------- | ------------------- |
+| `AZURE_ENV_NAME`        | Specifies the Azure Dev environment name. | Deployment pipelines | `dev`, `qa`, `prod` |
+| `AZURE_LOCATION`        | Specifies the Azure region for resources. | Deployment pipelines | `dev`, `qa`, `prod` |
+| `AZURE_SUBSCRIPTION_ID` | Specifies the Azure subscription ID.      | Deployment pipelines | `dev`, `qa`, `prod` |
 
 ---
 
@@ -161,13 +153,16 @@ In addition to secrets, the workflows require specific environment variables for
 
 The repository includes three key GitHub Actions workflows to manage CI/CD processes effectively. These workflows are located in the `.github/workflows` directory:
 
-1. **Deploy to Development (`cd-pipeline-dev.yml`)**  
+1. **Deploy to Development (********`cd-pipeline-dev.yml`********\*\*\*\*)**\
    Automates provisioning and deployment to the `dev` environment. Triggered by changes to the `develop` branch, it ensures the development environment is updated with the latest resources and application state.
 
-2. **Deploy to Production (`cd-pipeline-prd.yml`)**  
+2. **Deploy to QA (********`cd-pipeline-qa.yml`********\*\*\*\*)**\
+   Automates provisioning and deployment to the `qa` environment. Triggered by changes to the `qa` branch, it ensures the QA environment is updated for testing purposes.
+
+3. **Deploy to Production (********`cd-pipeline-prd.yml`********\*\*\*\*)**\
    Handles provisioning and deployment to the `prod` environment. Triggered by changes to the `main` branch, this workflow ensures production updates are executed with the necessary configurations for stability and security.
 
-3. **Pull Request Pipeline (`pr-pipeline.yml`)**  
+4. **Pull Request Pipeline (********`pr-pipeline.yml`********\*\*\*\*)**\
    Focuses on validating code quality and application behavior for pull requests targeting the `develop` branch. It includes steps for running tests and generating reports for both backend and frontend components.
 
 Each workflow is designed to ensure environment-specific configurations are applied, leveraging secrets, environment variables, and pre-defined triggers for seamless automation.
@@ -178,7 +173,7 @@ Each workflow is designed to ensure environment-specific configurations are appl
 
 ### Branch Protection Rules
 
-Optionally, you can set branch protection rules for the `main` and `develop` branches to enforce workflow execution and maintain code quality.
+Optionally, you can set branch protection rules for the `main`, `develop`, and `qa` branches to enforce workflow execution and maintain code quality.
 
 1. **Navigate to Branches:**
 
@@ -187,7 +182,7 @@ Optionally, you can set branch protection rules for the `main` and `develop` bra
 2. **Add Branch Protection:**
 
    - Click `Add rule`.
-   - Specify the branch name pattern (e.g., `main`, `develop`).
+   - Specify the branch name pattern (e.g., `main`, `develop`, `qa`).
    - **Configure Protections:**
      - **Require pull request reviews before merging.**
      - **Require status checks to pass before merging:** Select the relevant workflows.
