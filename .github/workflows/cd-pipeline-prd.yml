@@ -5,16 +5,19 @@ on:
     branches:
       - main
 
+  # Remove this to avoid manual deployment from GitHub
+  workflow_dispatch:
+
 jobs:
-  provision:
+  provision-and-deploy:
     name: Provision Resources and Deploy App
     runs-on: ubuntu-latest
     environment: prod
     env:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }} 
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}  
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       AUTH_APP_ID: ${{ secrets.AUTH_APP_ID }}
       AUTH_CLIENT_ID: ${{ secrets.AUTH_CLIENT_ID }}
       AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
@@ -57,3 +60,7 @@ jobs:
       - name: azd deploy
         shell: bash
         run: azd deploy
+
+      - name: run smoke tests
+        shell: bash
+        run: echo "TODO > run smoke tests"        
