@@ -28,6 +28,7 @@ jobs:
       run: |
         echo "Test with pytest"
         export PYTHONPATH=$(pwd)
+        coverage run -m pytest --collect-only -v --show-capture=stdout
         coverage run -m pytest -v --show-capture=stdout
         coverage report -m --include=app.py,backend/*,tests/*
         coverage xml
