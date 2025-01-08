@@ -1,4 +1,4 @@
-# Sample AOAI App  Configuration for CI/CD Pipelines
+# Sample AOAI App Configuration for CI/CD Pipelines
 
 This guide provides instructions to configure your Sample AOAI App GitHub repository for CI/CD workflows. It covers creating environments, setting up secrets specific to each environment, configuring necessary environment variables, creating Azure App Registrations for each environment, and ensuring all configurations are correctly in place.
 
@@ -21,7 +21,7 @@ Before proceeding, ensure you have the following:
 
 - **GitHub Repository Access:** Administrative access to the GitHub repository where the workflows will be configured.
 - **Azure Account:** An active Azure account with the necessary permissions to create and manage resources.
-- **Azure Dev CLI (********`azd`********\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*):** Installed and configured on your local machine for provisioning Azure resources.
+- **Azure Dev CLI (`azd`):** Installed and configured on your local machine for provisioning Azure resources.
 - **Service Principal:** Created in Azure for authentication purposes.
 - **Azure App Registrations:** Separate App Registrations for `dev` and `prod` environments.
 
@@ -46,14 +46,14 @@ The workflows require two environments: `dev` and `prod`. Environments in GitHub
    - In the left sidebar, click on `Environments`.
    - Click the `New environment` button.
 
-4. **Create ************************`dev`************************ Environment:**
+4. **Create `dev` Environment:**
 
    - **Name:** `dev`
    - **Optional Configurations:**
      - **Environment Protection Rules:** Configure rules such as required reviewers or wait timers if needed.
    - Click `Configure environment` to finalize.
 
-5. **Create ************************`prod`************************ Environment:**
+5. **Create `prod` Environment:**
 
    - Repeat the above steps with the **Name:** `prod`.
 
@@ -86,8 +86,17 @@ Follow these steps to create an App Registration in the Azure Portal for both `d
 
    - **Name:** Enter a name for your application (e.g., `WebApp-Dev` for the dev environment and `WebApp-Prod` for the prod environment).
    - **Supported account types:** Select the appropriate option (e.g., "Accounts in this organizational directory only").
-   - **Redirect URI:** Enter the URI you plan to use (e.g., `http://localhost:5000/.auth/login/aad/callback`).
+   - **Redirect URI:**
+     - **Platform:** Click on **Add a platform**.
+     - **Select Platform:** Choose **Web**.
+     - **Redirect URIs:** Enter the URI `http://localhost:5000/.auth/login/aad/callback`.
+   - **Implicit Grant and Hybrid Flows:**
+     - **Select:** Check the box for **ID tokens (used for implicit and hybrid flows)**.
    - Click **Register**.
+
+   ![Add Web Platform, Redirect URI, and ID Tokens](https://example.com/path-to-your-image.png) *(Replace with actual image if available)*
+
+   > **Note:** Selecting **ID tokens (used for implicit and hybrid flows)** is essential for enabling authentication flows that rely on ID tokens, such as implicit and hybrid OAuth 2.0 flows. This ensures that your application can securely handle user authentication.
 
 #### 3. Note the Application (client) ID and Directory (tenant) ID
 
@@ -124,13 +133,13 @@ The workflows rely on secrets for authentication and configuration. These secret
 
 ### Secrets Table
 
-| Secret Name          | Usage                                       | Workflow(s)           | Environment   |
-| -------------------- | ------------------------------------------- | --------------------- | ------------- |
-| `AZURE_CREDENTIALS`  | Authenticates GitHub Actions with Azure.    | All pipelines         | `dev`, `prod` |
-| `AZURE_OPENAI_KEY`   | Authenticates requests to Azure OpenAI.     | Pull Request pipeline | `dev`, `prod` |
-| `AUTH_APP_ID`        | App registration's Directory (tenant) ID.   | All pipelines         | `dev`, `prod` |
-| `AUTH_CLIENT_ID`     | App registration's Application (client) ID. | All pipelines         | `dev`, `prod` |
-| `AUTH_CLIENT_SECRET` | App registration's Client Secret.           | All pipelines         | `dev`, `prod` |
+| Secret Name           | Usage                                       | Workflow(s)           | Environment   |
+| --------------------- | ------------------------------------------- | --------------------- | ------------- |
+| `AZURE_CREDENTIALS`   | Authenticates GitHub Actions with Azure.    | All pipelines         | `dev`, `prod` |
+| `AZURE_OPENAI_KEY`    | Authenticates requests to Azure OpenAI.     | Pull Request pipeline | `dev`, `prod` |
+| `AUTH_APP_ID`         | App registration's Directory (tenant) ID.   | All pipelines         | `dev`, `prod` |
+| `AUTH_CLIENT_ID`      | App registration's Application (client) ID. | All pipelines         | `dev`, `prod` |
+| `AUTH_CLIENT_SECRET`  | App registration's Client Secret.           | All pipelines         | `dev`, `prod` |
 
 ---
 
@@ -155,13 +164,13 @@ In addition to secrets, the workflows require specific environment variables for
 
 The repository includes three key GitHub Actions workflows to manage CI/CD processes effectively. These workflows are located in the `.github/workflows` directory:
 
-1. **Deploy to Development (********`cd-pipeline-dev.yml`********\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*)**\
+1. **Deploy to Development (`cd-pipeline-dev.yml`)**  
    Automates provisioning and deployment to the `dev` environment. Triggered by changes to the `develop` branch, it ensures the development environment is updated with the latest resources and application state.
 
-2. **Deploy to Production (********`cd-pipeline-prd.yml`********\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*)**\
+2. **Deploy to Production (`cd-pipeline-prd.yml`)**  
    Handles provisioning and deployment to the `prod` environment. Triggered by changes to the `main` branch, this workflow ensures production updates are executed with the necessary configurations for stability and security.
 
-3. **Pull Request Pipeline (********`pr-pipeline.yml`********\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*)**\
+3. **Pull Request Pipeline (`pr-pipeline.yml`)**  
    Focuses on validating code quality and application behavior for pull requests targeting the `develop` branch. It includes steps for running tests and generating reports for both backend and frontend components.
 
 Each workflow is designed to ensure environment-specific configurations are applied, leveraging secrets, environment variables, and pre-defined triggers for seamless automation.
@@ -188,7 +197,6 @@ Optionally, you can set branch protection rules for the `main` and `develop` bra
      - **Include administrators** if you want the rules to apply to repository administrators.
    - Click `Create` to finalize.
 
-##
+---
 
 For any further assistance or advanced configurations, refer to the [GitHub Actions Documentation](https://docs.github.com/en/actions) and the [Azure Dev CLI Documentation](https://learn.microsoft.com/en-us/azure/developer/azure-devs-cli/).
-
