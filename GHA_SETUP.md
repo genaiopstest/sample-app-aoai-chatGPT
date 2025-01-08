@@ -128,7 +128,6 @@ The workflows rely on secrets for authentication and configuration. These secret
 | Secret Name          | Usage                                       | Workflow(s)           | Environment         |
 | -------------------- | ------------------------------------------- | --------------------- | ------------------- |
 | `AZURE_CREDENTIALS`  | Authenticates GitHub Actions with Azure.    | All pipelines         | `dev`, `qa`, `prod` |
-| `AZURE_OPENAI_KEY`   | Authenticates requests to Azure OpenAI.     | Pull Request pipeline | `dev`, `qa`, `prod` |
 | `AUTH_APP_ID`        | App registration's Object ID.               | All pipelines         | `dev`, `qa`, `prod` |
 | `AUTH_CLIENT_ID`     | App registration's Application (client) ID. | All pipelines         | `dev`, `qa`, `prod` |
 | `AUTH_CLIENT_SECRET` | App registration's Client Secret.           | All pipelines         | `dev`, `qa`, `prod` |
