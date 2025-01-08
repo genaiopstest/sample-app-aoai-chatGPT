@@ -5,8 +5,7 @@ on:
     branches:
       - develop
 
-  # leave this option to trigger the workflow manually
-  workflow_dispatch:
+
 
 jobs:
   provision-and-deploy:

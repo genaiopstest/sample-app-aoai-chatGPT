@@ -5,6 +5,9 @@ on:
     branches:
       - release/* 
 
+  # Remove this to avoid manual deployment from GitHub
+  workflow_dispatch:
+
 jobs:
   provision-and-deploy:
     name: Provision Resources and Deploy App
