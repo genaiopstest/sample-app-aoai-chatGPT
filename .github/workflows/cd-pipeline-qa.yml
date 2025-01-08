@@ -1,15 +1,15 @@
-name: Deploy to Production
+name: Deploy to QA
 
 on:
   push:
     branches:
-      - main
+      - release/* 
 
 jobs:
   provision:
     name: Provision Resources and Deploy App
     runs-on: ubuntu-latest
-    environment: prod
+    environment: qa
     env:
       AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }} 
@@ -49,6 +49,10 @@ jobs:
          azd env set AUTH_APP_ID $AUTH_APP_ID
          azd env set AUTH_CLIENT_ID $AUTH_CLIENT_ID
          azd env set AUTH_CLIENT_SECRET $AUTH_CLIENT_SECRET
+
+      - name: evaluate prompt flow
+        shell: bash
+        run: echo "TODO > add prompt flow evaluation"
 
       - name: azd provision
         shell: bash

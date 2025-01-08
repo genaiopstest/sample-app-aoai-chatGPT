@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - develop
+
+  # leave this option to trigger the workflow manually
   workflow_dispatch:
 
 jobs:
@@ -12,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
     environment: dev
     env:
+      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       AZURE_ENV_NAME: ${{ vars.AZURE_ENV_NAME }} 
       AZURE_LOCATION: ${{ vars.AZURE_LOCATION }}
       AZURE_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}  
-      AZURE_CREDENTIALS: ${{ secrets.AZURE_CREDENTIALS }}
       AUTH_APP_ID: ${{ secrets.AUTH_APP_ID }}
       AUTH_CLIENT_ID: ${{ secrets.AUTH_CLIENT_ID }}
       AUTH_CLIENT_SECRET: ${{ secrets.AUTH_CLIENT_SECRET }}
